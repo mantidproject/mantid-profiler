@@ -17,6 +17,7 @@
 
 import copy
 import re
+from pathlib import Path
 
 
 class Node:
@@ -137,7 +138,7 @@ def parseLine(line):
     return {"thread_id": res.group(1), "name": res.group(2), "start": int(res.group(3)), "finish": int(res.group(4))}
 
 
-def fromFile(fileName):
+def fromFile(fileName: Path, cleanup: bool = True):
     res = []
     header = ""
     with open(fileName) as inp:
@@ -146,6 +147,10 @@ def fromFile(fileName):
                 header = line.strip("\n")
                 continue
             res.append(parseLine(line))
+
+    if cleanup and fileName.exists():
+        fileName.unlink()
+
     return header, res
 
 
