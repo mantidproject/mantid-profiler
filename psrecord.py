@@ -172,7 +172,8 @@ def monitor(pid, logfile=None, interval=None):
                 time.sleep(interval)
 
     except KeyboardInterrupt:  # pragma: no cover
-        pass
+        print(f"killing process being monitored [PID={pr.pid}]:", " ".join(pr.cmdline()))
+        pr.kill()
 
     if logfile:
         f.close()
