@@ -24,6 +24,7 @@ import numpy as np
 
 import algorithm_tree as at
 from diskrecord import monitor as diskmonitor
+from diskrecord import parse_log as parse_disk_log
 from psrecord import monitor as cpumonitor
 from psrecord import parse_log as parse_cpu_log
 
@@ -140,6 +141,8 @@ def htmlProfile(
     filename=None,
     cpu_x=None,
     cpu_data=None,
+    disk_x=None,
+    disk_data=None,
     algm_records=None,
     fill_factor=0,
     nthreads=0,
@@ -170,8 +173,19 @@ def htmlProfile(
     writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads")
     htmlFile.write("};\n")
 
-    count = 4
-    dataString = "[trace1,trace2,trace3"
+    # read chars
+    htmlFile.write("  var trace4 = {\n")
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y2", label="Read Mbps")
+    print("READ:", disk_x.shape, disk_data[:, 1].shape)
+    htmlFile.write("};\n")
+
+    # write chars
+    htmlFile.write("  var trace5 = {\n")
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y2", label="Write Mbps")
+    htmlFile.write("};\n")
+
+    count = 6
+    dataString = "[" + ",".join(["trace{}".format(i) for i in range(1, 6)])  # traces that already exist
     for tree in at.toTrees(algm_records):
         for node in tree.to_list():
             htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, count, cpu_x[-1]))
@@ -323,22 +337,41 @@ def main():
         header = ""
         records = []
 
+    # Read in disk usage - sync_time will be overwritten by cpu below
+    args.diskfile = Path(args.diskfile)
+    sync_time, disk_data = parse_disk_log(args.diskfile, cleanup=not args.noclean)
+    # Time series
+    disk_x = disk_data[:, 0] - sync_time
+    """
+    print('='*30)
+    print(disk_data.shape)
+    print(disk_data)
+    print('-'*30)
+    disk_data = np.transpose(disk_data)
+    print(disk_data.shape)
+    print(disk_data)
+    print('-'*30)
+    print(sync_time)
+    """
+
     # Read in CPU and memory activity log
     args.logfile = Path(args.logfile)
-    sync_time, data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
-
+    sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
     # Time series
-    x = data[:, 0] - sync_time
+    cpu_x = cpu_data[:, 0] - sync_time
+    print(sync_time)
 
     # Integrate under the curve and compute CPU usage fill factor
-    area_under_curve = np.trapz(data[:, 1], x=x)
-    fill_factor = area_under_curve / ((x[-1] - x[0]) * nthreads)
+    area_under_curve = np.trapz(cpu_data[:, 1], x=cpu_x)
+    fill_factor = area_under_curve / ((cpu_x[-1] - cpu_x[0]) * nthreads)
 
     # Create HTML output with Plotly
     htmlProfile(
         filename=args.outfile,
-        cpu_x=x,
-        cpu_data=data,
+        cpu_x=cpu_x,
+        cpu_data=cpu_data,
+        disk_x=disk_x,
+        disk_data=disk_data,
         algm_records=records,
         fill_factor=fill_factor,
         nthreads=nthreads,

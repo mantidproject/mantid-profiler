@@ -1,6 +1,8 @@
+from pathlib import Path
 from time import sleep
 from typing import Optional
 
+import numpy as np
 import psutil
 
 from time_util import get_current_time, get_start_time
@@ -18,6 +20,7 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
     # Record start time
     starting_point = get_start_time()
     start_time = get_current_time()
+    last_time = start_time
 
     disk_before = process.io_counters()
 
@@ -34,6 +37,9 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
         )
         handle.write("START_TIME: {}\n".format(starting_point))
 
+        # conversion factor of bytes per sec to Mega-bits per second
+        to_Mbps = 0.000008  # should this be (8. / 1024. / 1024.) ?
+
         # main event loop
         try:
             while True:
@@ -42,12 +48,16 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
                     current_time = get_current_time()
                     disk_after = process.io_counters()
 
-                    # calculate amount per second
-                    read_char_per_sec = (disk_after.read_chars - disk_before.read_chars) / interval
-                    write_char_per_sec = (disk_after.write_chars - disk_before.write_chars) / interval
+                    delta_time = current_time - last_time
+                    if delta_time <= 0.0:
+                        continue
 
-                    read_byte_per_sec = (disk_after.read_bytes - disk_before.read_bytes) / interval
-                    write_byte_per_sec = (disk_after.write_bytes - disk_before.write_bytes) / interval
+                    # calculate bytes amount per second
+                    read_char_per_sec = to_Mbps * (disk_after.read_chars - disk_before.read_chars) / delta_time
+                    write_char_per_sec = to_Mbps * (disk_after.write_chars - disk_before.write_chars) / delta_time
+
+                    read_byte_per_sec = to_Mbps * (disk_after.read_bytes - disk_before.read_bytes) / delta_time
+                    write_byte_per_sec = to_Mbps * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
 
                     # write information to the log file
                     handle.write(
@@ -62,6 +72,7 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
 
                     # copy over information to new previous
                     disk_before = disk_after
+                    last_time = current_time
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     break  # all done
 
@@ -70,3 +81,28 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
         except KeyboardInterrupt:  # pragma: no cover
             print(f"killing process being monitored [PID={process.pid}]:", " ".join(process.cmdline()))
             process.kill()
+
+
+def parse_log(filename: Path, cleanup: bool = True):
+    rows = []
+    start_time = 0.0
+    with open(filename, "r") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:  # skip empty lines
+                continue
+            elif line.startswith("#"):  # skip comment lines
+                continue
+            elif line.startswith("START_TIME:"):
+                start_time = float(line.split()[-1])
+                continue
+
+            # parse the line
+            rows.append([float(value) for value in line.split()])
+
+    # remove the file
+    if cleanup and filename.exists():
+        filename.unlink()
+
+    # return results
+    return start_time, np.array(rows)
