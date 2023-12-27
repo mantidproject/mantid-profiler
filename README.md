@@ -49,3 +49,5 @@ You can interact with a demo profile [here](http://www.nbi.dk/~nvaytet/SNSPowder
 ## Contact
 
 Neil Vaytet, European Spallation Source
+
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/mantidproject/mantid-profiler/main.svg)](https://results.pre-commit.ci/latest/github/mantidproject/mantid-profiler/main)
