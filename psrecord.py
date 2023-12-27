@@ -31,6 +31,7 @@
 ###############################################################################
 
 import time
+from typing import Optional
 
 
 # returns percentage for system + user time
@@ -84,10 +85,14 @@ def update_children(old_children, new_children):  # old children - dict, new_chi
     old_children.update(updct)
 
 
-def monitor(pid, logfile=None, interval=None):
+def monitor(pid: int, logfile: str, interval: Optional[float]):
     # We import psutil here so that the module can be imported even if psutil
     # is not present (for example if accessing the version)
     import psutil
+
+    # change None to reasonable default
+    if interval is None:
+        interval = 0.0
 
     pr = psutil.Process(pid)
 
@@ -140,7 +145,7 @@ def monitor(pid, logfile=None, interval=None):
                 current_cpu = get_percent(pr)
                 current_mem = get_memory(pr)
                 current_threads = get_threads(pr)
-            except Exception:  # noqa: BLE001
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 break
             current_mem_real = current_mem.rss / 1024.0**2
             current_mem_virtual = current_mem.vms / 1024.0**2
@@ -152,7 +157,7 @@ def monitor(pid, logfile=None, interval=None):
                     current_cpu += get_percent(child)
                     current_mem = get_memory(child)
                     current_threads.extend(get_threads(child))
-                except Exception:  # noqa: BLE001
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
                 current_mem_real += current_mem.rss / 1024.0**2
                 current_mem_virtual += current_mem.vms / 1024.0**2
@@ -168,7 +173,7 @@ def monitor(pid, logfile=None, interval=None):
             )
             f.flush()
 
-            if interval is not None:
+            if interval > 0.0:
                 time.sleep(interval)
 
     except KeyboardInterrupt:  # pragma: no cover
