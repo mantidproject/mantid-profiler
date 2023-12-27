@@ -18,11 +18,13 @@
 import argparse
 import copy
 import sys
+from threading import Thread
 
 import numpy as np
 
 import algorithm_tree as at
-import psrecord
+from diskrecord import monitor as diskmonitor
+from psrecord import monitor as cpumonitor
 
 
 # Parse the logfile outputted by psrecord
@@ -301,7 +303,7 @@ def htmlProfile(
 def main():
     parser = argparse.ArgumentParser(description="Profile a Mantid workflow")
 
-    parser.add_argument("pid", type=str, help="the process id")
+    parser.add_argument("pid", type=int, help="the process id")
 
     parser.add_argument("--outfile", type=str, default="profile.html", help="name of output html file")
 
@@ -311,6 +313,10 @@ def main():
 
     parser.add_argument(
         "--logfile", type=str, default="mantidprofile.txt", help="name of output file containing process monitor data"
+    )
+
+    parser.add_argument(
+        "--diskfile", type=str, default="mantiddisk.txt", help="name of output file containing process disk usage data"
     )
 
     parser.add_argument(
@@ -330,9 +336,19 @@ def main():
 
     args = parser.parse_args()
 
-    # Launch the process monitor and wait for it to return
-    print("Attaching to process " + args.pid)
-    psrecord.monitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+    print(f"Attaching to process {args.pid}")
+
+    # start the disk monitor in a separate thread
+    diskthread = Thread(
+        target=diskmonitor, args=(args.pid,), kwargs={"logfile": args.diskfile, "interval": args.interval}
+    )
+    diskthread.start()
+
+    # cpu mointor in main thread to prevent early exit
+    cpumonitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+
+    # wait for disk monitor to finish
+    diskthread.join()
 
     # Read in algorithm timing log and build tree
     try:
