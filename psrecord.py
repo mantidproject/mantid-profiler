@@ -30,8 +30,12 @@
 #
 ###############################################################################
 
+import copy
+from pathlib import Path
 from time import sleep
 from typing import Optional
+
+import numpy as np
 
 from time_util import get_current_time, get_start_time
 
@@ -178,3 +182,59 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
 
     if logfile:
         f.close()
+
+
+# Parse the logfile outputted by psrecord
+def parse_log(filename: Path, cleanup: bool = True):
+    rows = []
+    dct1 = {}  # starts out uninitialzed
+    dct2 = {}
+    start_time = 0.0
+    with open(filename, "r") as f:
+        for line in f:
+            if "#" in line:
+                continue
+            if "START_TIME:" in line:
+                start_time = float(line.split()[1])
+                continue
+            line = line.replace("[", "")
+            line = line.replace("]", "")
+            line = line.replace("(", "")
+            line = line.replace(")", "")
+            line = line.replace(",", "")
+            line = line.replace("pthread", "")
+            line = line.replace("id=", "")
+            line = line.replace("user_time=", "")
+            line = line.replace("system_time=", "")
+            row = []
+            lst = line.split()
+            for i in range(4):
+                row.append(float(lst[i]))
+            i = 4
+            dct1 = copy.deepcopy(dct2)
+            dct2.clear()
+            while i < len(lst):
+                idx = int(lst[i])
+                i += 1
+                ut = float(lst[i])
+                i += 1
+                st = float(lst[i])
+                i += 1
+                dct2.update({idx: [ut, st]})
+            count = 0
+            for key, val in dct2.items():
+                if key not in dct1.keys():
+                    count += 1
+                    continue
+                elem = dct1[key]
+                if val[0] != elem[0] or val[1] != elem[1]:
+                    count += 1
+            row.append(count)
+            row.append(len(dct2))
+            rows.append(row)
+    # remove the file
+    if cleanup and filename.exists():
+        filename.unlink()
+
+    # return results
+    return start_time, np.array(rows)
