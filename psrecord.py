@@ -30,8 +30,10 @@
 #
 ###############################################################################
 
-import time
+from time import sleep
 from typing import Optional
+
+from time_util import get_current_time, get_start_time
 
 
 # returns percentage for system + user time
@@ -97,11 +99,8 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
     pr = psutil.Process(pid)
 
     # Record start time
-    starting_point = time.time()
-    try:
-        start_time = time.perf_counter()
-    except AttributeError:
-        start_time = time.time()
+    starting_point = get_start_time()
+    start_time = get_current_time()
 
     f = open(logfile, "w")
     f.write(
@@ -123,10 +122,7 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
         # Start main event loop
         while True:
             # Find current time
-            try:
-                current_time = time.perf_counter()
-            except AttributeError:
-                current_time = time.time()
+            current_time = get_current_time()
 
             try:
                 pr_status = pr.status()
@@ -174,7 +170,7 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
             f.flush()
 
             if interval > 0.0:
-                time.sleep(interval)
+                sleep(interval)
 
     except KeyboardInterrupt:  # pragma: no cover
         print(f"killing process being monitored [PID={pr.pid}]:", " ".join(pr.cmdline()))
