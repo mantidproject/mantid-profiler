@@ -10,10 +10,14 @@ from time_util import get_current_time, get_start_time
 
 def monitor(pid: int, logfile: str, interval: Optional[float]):
     """Monitor the disk usage of the supplied process id
-    The interval defaults to ??? if not supplied"""  # TODO
-    # change None to reasonable default
+    The interval defaults to 0.05 if not supplied"""
+    # change interval to reasonable default
+    # being too small doesn't aid in understanding performance
+    DEFAULT_INTERVAL = 0.05
     if interval is None:
-        interval = 0.1  # TODO
+        interval = DEFAULT_INTERVAL
+    else:
+        interval = max(DEFAULT_INTERVAL, interval)
 
     process = psutil.Process(pid)
 
@@ -29,16 +33,16 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
         handle.write(
             "# {0:12s} {1:12s} {2:12s} {3:12s} {4}\n".format(
                 "Elapsed time".center(12),
-                "ReadChars (per sec)".center(12),
-                "WriteChars (per sec)".center(12),
-                "ReadBytes (per sec)".center(12),
-                "WriteBytes (per sec)".center(12),
+                "ReadChars (Mbit per sec)".center(12),
+                "WriteChars (Gbit per sec)".center(12),
+                "ReadBytes (Gbit per sec)".center(12),
+                "WriteBytes (Gbit per sec)".center(12),
             )
         )
         handle.write("START_TIME: {}\n".format(starting_point))
 
-        # conversion factor of bytes per sec to Mega-bits per second
-        to_Mbps = 0.000008  # should this be (8. / 1024. / 1024.) ?
+        # conversion factor of bytes per sec to Giga-bits per second - 8 bits in a byte
+        to_Gbps = 8.0 / 1000.0 / 1000.0 / 1000.0
 
         # main event loop
         try:
@@ -53,11 +57,11 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
                         continue
 
                     # calculate bytes amount per second
-                    read_char_per_sec = to_Mbps * (disk_after.read_chars - disk_before.read_chars) / delta_time
-                    write_char_per_sec = to_Mbps * (disk_after.write_chars - disk_before.write_chars) / delta_time
+                    read_char_per_sec = to_Gbps * (disk_after.read_chars - disk_before.read_chars) / delta_time
+                    write_char_per_sec = to_Gbps * (disk_after.write_chars - disk_before.write_chars) / delta_time
 
-                    read_byte_per_sec = to_Mbps * (disk_after.read_bytes - disk_before.read_bytes) / delta_time
-                    write_byte_per_sec = to_Mbps * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
+                    read_byte_per_sec = to_Gbps * (disk_after.read_bytes - disk_before.read_bytes) / delta_time
+                    write_byte_per_sec = to_Gbps * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
 
                     # write information to the log file
                     handle.write(
