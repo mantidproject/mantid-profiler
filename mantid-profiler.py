@@ -16,64 +16,17 @@
 
 
 import argparse
-import copy
 import sys
+from pathlib import Path
+from threading import Thread
 
 import numpy as np
 
 import algorithm_tree as at
-import psrecord
-
-
-# Parse the logfile outputted by psrecord
-def parse_cpu_log(filename):
-    rows = []
-    dct1 = {}
-    dct2 = {}
-    start_time = 0.0
-    with open(filename, "r") as f:
-        for line in f:
-            if "#" in line:
-                continue
-            if "START_TIME:" in line:
-                start_time = float(line.split()[1])
-                continue
-            line = line.replace("[", "")
-            line = line.replace("]", "")
-            line = line.replace("(", "")
-            line = line.replace(")", "")
-            line = line.replace(",", "")
-            line = line.replace("pthread", "")
-            line = line.replace("id=", "")
-            line = line.replace("user_time=", "")
-            line = line.replace("system_time=", "")
-            row = []
-            lst = line.split()
-            for i in range(4):
-                row.append(float(lst[i]))
-            i = 4
-            dct1 = copy.deepcopy(dct2)
-            dct2.clear()
-            while i < len(lst):
-                idx = int(lst[i])
-                i += 1
-                ut = float(lst[i])
-                i += 1
-                st = float(lst[i])
-                i += 1
-                dct2.update({idx: [ut, st]})
-            count = 0
-            for key, val in dct2.items():
-                if key not in dct1.keys():
-                    count += 1
-                    continue
-                elem = dct1[key]
-                if val[0] != elem[0] or val[1] != elem[1]:
-                    count += 1
-            row.append(count)
-            row.append(len(dct2))
-            rows.append(row)
-    return start_time, np.array(rows)
+from diskrecord import monitor as diskmonitor
+from diskrecord import parse_log as parse_disk_log
+from psrecord import monitor as cpumonitor
+from psrecord import parse_log as parse_cpu_log
 
 
 # Convert string to RGB color
@@ -158,16 +111,46 @@ def treeNodeToHtml(node, lmax, sync_time, header, count, tot_time):
     outputString += "hoverinfo: 'text',\n"
     outputString += "type: 'scatter',\n"
     outputString += "xaxis: 'x',\n"
-    outputString += "yaxis: 'y3',\n"
+    outputString += "yaxis: 'y4',\n"
     outputString += "showlegend: false,\n"
     outputString += "};\n"
 
     return outputString
 
 
+def writeArray(stream, array):
+    stream.write("[")
+    stream.write(",".join([str(value) for value in array]))
+    stream.write("],\n")
+
+
+def writeTrace(stream, x_axis, y_axis, x_name: str, y_name: str, label: str):
+    stream.write("    x: ")
+    writeArray(stream, x_axis)
+    stream.write("    y: ")
+    writeArray(stream, y_axis)
+
+    stream.write("  xaxis: '{}',\n".format(x_name))
+    stream.write("  yaxis: '{}',\n".format(y_name))
+    stream.write("  type: 'scatter',\n")
+    stream.write("  name:'{}',\n".format(label))
+
+
 # Generate HTML interactive plot with Plotly library
 def htmlProfile(
-    filename=None, x=None, data=None, records=None, fill_factor=0, nthreads=0, lmax=0, sync_time=0, header=None
+    filename=None,
+    cpu_x=None,
+    cpu_data=None,
+    disk_x=None,
+    disk_data=None,
+    disk_in_bytes=False,
+    algm_records=None,
+    fill_factor=0,
+    nthreads=0,
+    lmax=0,
+    sync_time=0,
+    header=None,
+    html_height=800,
 ):
     htmlFile = open(filename, "w")
     htmlFile.write("<head>\n")
@@ -176,84 +159,74 @@ def htmlProfile(
     htmlFile.write("<body>\n")
     htmlFile.write('  <div id="myDiv"></div>\n')
     htmlFile.write("  <script>\n")
+
     # CPU
     htmlFile.write("  var trace1 = {\n")
-    htmlFile.write("    'x': [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % x[i])
-    htmlFile.write("],\n")
-    htmlFile.write("    'y': [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % data[i, 1])
-    htmlFile.write("],\n")
-    htmlFile.write("  'xaxis': 'x',\n")
-    htmlFile.write("  'yaxis': 'y1',\n")
-    htmlFile.write("  type: 'scatter',\n")
-    htmlFile.write("  name:'CPU',\n")
-    htmlFile.write("};\n")
-    # RAM
-    htmlFile.write("  var trace2 = {\n")
-    htmlFile.write("    x: [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % x[i])
-    htmlFile.write("],\n")
-    htmlFile.write("    y: [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % (data[i, 2] / 1000.0))
-    htmlFile.write("],\n")
-    htmlFile.write("  xaxis: 'x',\n")
-    htmlFile.write("  yaxis: 'y2',\n")
-    htmlFile.write("  type: 'scatter',\n")
-    htmlFile.write("  name:'RAM',\n")
-    htmlFile.write("};\n")
-    # Active threads
-    htmlFile.write("  var trace3 = {\n")
-    htmlFile.write("    x: [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % x[i])
-    htmlFile.write("],\n")
-    htmlFile.write("    y: [\n")
-    for i in range(len(x)):
-        htmlFile.write("%f,\n" % (data[i, 4] * 100.0))
-    htmlFile.write("],\n")
-    htmlFile.write("  xaxis: 'x',\n")
-    htmlFile.write("  yaxis: 'y1',\n")
-    htmlFile.write("  type: 'scatter',\n")
-    htmlFile.write("  name:'Active threads',\n")
+    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
     htmlFile.write("};\n")
 
-    count = 4
-    dataString = "[trace1,trace2,trace3"
-    for tree in at.toTrees(records):
+    # RAM
+    htmlFile.write("  var trace2 = {\n")
+    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2], x_name="x", y_name="y2", label="RAM")
+    htmlFile.write("};\n")
+
+    # Active threads
+    htmlFile.write("  var trace3 = {\n")
+    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads")
+    htmlFile.write("};\n")
+
+    # read chars
+    htmlFile.write("  var trace4 = {\n")
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y3", label="Read")
+    htmlFile.write("};\n")
+
+    # write chars
+    htmlFile.write("  var trace5 = {\n")
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y3", label="Write")
+    htmlFile.write("};\n")
+
+    count = 6
+    dataString = "[" + ",".join(["trace{}".format(i) for i in range(1, 6)])  # traces that already exist
+    for tree in at.toTrees(algm_records):
         for node in tree.to_list():
-            htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, count, x[-1]))
+            htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, count, cpu_x[-1]))
             dataString += ",trace%i" % count
             count += 1
     dataString += "]"
 
     htmlFile.write("var data = " + dataString + ";\n")
     htmlFile.write("var layout = {\n")
-    htmlFile.write("  'height': 700,\n")
+    htmlFile.write("  'height': {},\n".format(html_height))
     htmlFile.write("  'xaxis' : {\n")
     htmlFile.write("    'domain' : [0, 1.0],\n")
     htmlFile.write("    'title' : 'Time (s)',\n")
     htmlFile.write("    'side' : 'top',\n")
     htmlFile.write("  },\n")
-    htmlFile.write("  'yaxis1': {\n")
-    htmlFile.write("    'domain' : [0.5, 1.0],\n")
+    htmlFile.write("  'yaxis1': {\n")  # upper - CPU on left
+    htmlFile.write("    'domain' : [0.6, 1.0],\n")
     htmlFile.write("    'title': 'CPU (%)',\n")
     htmlFile.write("    'side': 'left',\n")
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    },\n")
-    htmlFile.write("  'yaxis2': {\n")
+    htmlFile.write("  'yaxis2': {\n")  # upper - RAM on right
     htmlFile.write("    'title': 'RAM (GB)',\n")
     htmlFile.write("    'overlaying': 'y1',\n")
     htmlFile.write("    'side': 'right',\n")
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    'showgrid': false,\n")
     htmlFile.write("    },\n")
-    htmlFile.write("  'yaxis3': {\n")
-    htmlFile.write("    'domain' : [0, 0.5],\n")
+    htmlFile.write("  'yaxis3': {\n")  # middle - disk
+    htmlFile.write("    'domain' : [0.45, 0.6],\n")
+    htmlFile.write("    'anchor' : 'x',\n")
+    if disk_in_bytes:
+        htmlFile.write("    'title': 'GBps',\n")
+    else:
+        htmlFile.write("    'title': 'Gbps',\n")
+    htmlFile.write("    'side': 'left',\n")
+    htmlFile.write("    'fixedrange': true,\n")
+    htmlFile.write("    },\n")
+    htmlFile.write("  'yaxis4': {\n")  # lower - algorithm annotations
+    htmlFile.write("    'domain' : [0, 0.45],\n")
     htmlFile.write("    'anchor' : 'x',\n")
     htmlFile.write("    'showgrid': false,\n")
     htmlFile.write("    'ticks': '',\n")
@@ -285,7 +258,7 @@ def htmlProfile(
     htmlFile.write("        width: 0,\n")
     htmlFile.write("      },\n")
     htmlFile.write("      x0: 0.0,\n")
-    htmlFile.write("      x1: %f,\n" % x[-1])
+    htmlFile.write("      x1: %f,\n" % cpu_x[-1])
     htmlFile.write("      y0: 0,\n")
     htmlFile.write("      y1: %i,\n" % (nthreads * 100))
     htmlFile.write("      xref: 'x',\n")
@@ -299,18 +272,24 @@ def htmlProfile(
 
 # Main function to launch process monitor and create interactive HTML plot
 def main():
-    parser = argparse.ArgumentParser(description="Profile a Mantid workflow")
+    parser = argparse.ArgumentParser(
+        description="Profile a Mantid workflow", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument("pid", type=str, help="the process id")
+    parser.add_argument("pid", type=int, help="the process id")
 
-    parser.add_argument("--outfile", type=str, default="profile.html", help="name of output html file")
+    parser.add_argument("--outfile", type=Path, default="profile.html", help="name of output html file")
 
     parser.add_argument(
-        "--infile", type=str, default="algotimeregister.out", help="name of input file containing algorithm timings"
+        "--infile", type=Path, default="algotimeregister.out", help="name of input file containing algorithm timings"
     )
 
     parser.add_argument(
-        "--logfile", type=str, default="mantidprofile.txt", help="name of output file containing process monitor data"
+        "--logfile", type=Path, default="mantidprofile.txt", help="name of output file containing process monitor data"
+    )
+
+    parser.add_argument(
+        "--diskfile", type=Path, default="mantiddisk.txt", help="name of output file containing process disk usage data"
     )
 
     parser.add_argument(
@@ -321,6 +300,12 @@ def main():
         "as often as possible.",
     )
 
+    parser.add_argument("--noclean", action="store_true", help="remove files upon successful completion")
+
+    parser.add_argument("--height", type=int, default=800, help="height for html plot")
+
+    parser.add_argument("--bytes", action="store_true", help="Report disk speed in GBps rather than Gbps")
+
     parser.add_argument(
         "--mintime",
         type=float,
@@ -328,15 +313,28 @@ def main():
         help="minimum duration for an algorithm to appear in" "the profiling graph (in seconds).",
     )
 
+    # parse command line arguments
     args = parser.parse_args()
 
-    # Launch the process monitor and wait for it to return
-    print("Attaching to process " + args.pid)
-    psrecord.monitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+    print(f"Attaching to process {args.pid}")
+
+    # start the disk monitor in a separate thread
+    diskthread = Thread(
+        target=diskmonitor,
+        args=(args.pid,),
+        kwargs={"logfile": args.diskfile, "interval": args.interval, "show_bytes": args.bytes},
+    )
+    diskthread.start()
+
+    # cpu monitor in main thread to prevent early exit
+    cpumonitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+
+    # wait for disk monitor to finish
+    diskthread.join()
 
     # Read in algorithm timing log and build tree
     try:
-        header, records = at.fromFile(args.infile)
+        header, records = at.fromFile(Path(args.infile), cleanup=not args.noclean)
         records = [x for x in records if x["finish"] - x["start"] > (args.mintime * 1.0e9)]
         # Number of threads allocated to this run
         nthreads = int(header.split()[3])
@@ -358,33 +356,38 @@ def main():
         header = ""
         records = []
 
-    # Read in CPU and memory activity log
-    try:
-        sync_time, data = parse_cpu_log(args.logfile)
-    except FileNotFoundError:
-        raise
-
+    # Read in disk usage - sync_time will be overwritten by cpu below
+    args.diskfile = Path(args.diskfile)
+    sync_time, disk_data = parse_disk_log(args.diskfile, cleanup=not args.noclean)
     # Time series
-    x = data[:, 0] - sync_time
+    disk_x = disk_data[:, 0] - sync_time
+
+    # Read in CPU and memory activity log
+    sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
+    # Time series
+    cpu_x = cpu_data[:, 0] - sync_time
+    print(sync_time)
 
     # Integrate under the curve and compute CPU usage fill factor
-    area_under_curve = np.trapz(data[:, 1], x=x)
-    fill_factor = area_under_curve / ((x[-1] - x[0]) * nthreads)
+    area_under_curve = np.trapz(cpu_data[:, 1], x=cpu_x)
+    fill_factor = area_under_curve / ((cpu_x[-1] - cpu_x[0]) * nthreads)
 
     # Create HTML output with Plotly
     htmlProfile(
         filename=args.outfile,
-        x=x,
-        data=data,
-        records=records,
+        cpu_x=cpu_x,
+        cpu_data=cpu_data,
+        disk_x=disk_x,
+        disk_data=disk_data,
+        disk_in_bytes=args.bytes,
+        algm_records=records,
         fill_factor=fill_factor,
         nthreads=nthreads,
         lmax=lmax,
         sync_time=sync_time,
         header=header,
+        html_height=args.height,
     )
-
-    return
 
 
 if __name__ == "__main__":

@@ -30,41 +30,38 @@
 #
 ###############################################################################
 
-import time
+import copy
+from pathlib import Path
+from time import sleep
+from typing import Optional
+
+import numpy as np
+import psutil
+
+from time_util import get_current_time, get_start_time
 
 
 # returns percentage for system + user time
 def get_percent(process):
-    try:
-        return process.cpu_percent()
-    except AttributeError:
-        return process.get_cpu_percent()
+    return process.cpu_percent()
 
 
 def get_memory(process):
-    try:
-        return process.memory_info()
-    except AttributeError:
-        return process.get_memory_info()
+    return process.memory_info()
 
 
 def get_threads(process):
-    try:
-        return process.threads()
-    except AttributeError:
-        return process.get_threads()
+    return process.threads()
 
 
-def all_children(pr):
+def all_children(pr: psutil.Process) -> list[psutil.Process]:
     try:
         return pr.children(recursive=True)
-    except AttributeError:
-        return pr.get_children(recursive=True)
     except Exception:  # noqa: BLE001
         return []
 
 
-def update_children(old_children, new_children):  # old children - dict, new_children - list
+def update_children(old_children: dict[int, psutil.Process], new_children: list[psutil.Process]):
     new_dct = {}
     for ch in new_children:
         new_dct.update({ch.pid: ch})
@@ -84,19 +81,16 @@ def update_children(old_children, new_children):  # old children - dict, new_chi
     old_children.update(updct)
 
 
-def monitor(pid, logfile=None, interval=None):
-    # We import psutil here so that the module can be imported even if psutil
-    # is not present (for example if accessing the version)
-    import psutil
+def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
+    # change None to reasonable default
+    if interval is None:
+        interval = 0.0
 
     pr = psutil.Process(pid)
 
     # Record start time
-    starting_point = time.time()
-    try:
-        start_time = time.perf_counter()
-    except AttributeError:
-        start_time = time.time()
+    starting_point = get_start_time()
+    start_time = get_current_time()
 
     f = open(logfile, "w")
     f.write(
@@ -118,10 +112,7 @@ def monitor(pid, logfile=None, interval=None):
         # Start main event loop
         while True:
             # Find current time
-            try:
-                current_time = time.perf_counter()
-            except AttributeError:
-                current_time = time.time()
+            current_time = get_current_time()
 
             try:
                 pr_status = pr.status()
@@ -140,7 +131,7 @@ def monitor(pid, logfile=None, interval=None):
                 current_cpu = get_percent(pr)
                 current_mem = get_memory(pr)
                 current_threads = get_threads(pr)
-            except Exception:  # noqa: BLE001
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 break
             current_mem_real = current_mem.rss / 1024.0**2
             current_mem_virtual = current_mem.vms / 1024.0**2
@@ -152,7 +143,7 @@ def monitor(pid, logfile=None, interval=None):
                     current_cpu += get_percent(child)
                     current_mem = get_memory(child)
                     current_threads.extend(get_threads(child))
-                except Exception:  # noqa: BLE001
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
                 current_mem_real += current_mem.rss / 1024.0**2
                 current_mem_virtual += current_mem.vms / 1024.0**2
@@ -168,11 +159,65 @@ def monitor(pid, logfile=None, interval=None):
             )
             f.flush()
 
-            if interval is not None:
-                time.sleep(interval)
+            if interval > 0.0:
+                sleep(interval)
 
     except KeyboardInterrupt:  # pragma: no cover
-        pass
+        print(f"killing process being monitored [PID={pr.pid}]:", " ".join(pr.cmdline()))
+        pr.kill()
 
     if logfile:
         f.close()
+
+
+# Parse the logfile outputted by psrecord
+def parse_log(filename: Path, cleanup: bool = True):
+    rows: list = []
+    dct1: dict = {}  # starts out uninitialized
+    dct2: dict = {}
+    start_time = 0.0
+    with open(filename, "r") as handle:
+        for line in handle:
+            line = line.strip()
+            if line.startswith("#") or not line:
+                continue
+            elif line.startswith("START_TIME:"):
+                start_time = float(line.split()[-1])
+                continue
+
+            # remove unwanted characters/strings
+            for item in ("[", "]", "(", ")", ",", "pthread", "id=", "user_time=", "system_time="):
+                line = line.replace(item, "")
+            row = []
+            lst = line.split()
+            for i in range(4):
+                row.append(float(lst[i]))
+            i = 4
+            dct1 = copy.deepcopy(dct2)
+            dct2.clear()
+            while i < len(lst):
+                idx = int(lst[i])
+                i += 1
+                ut = float(lst[i])
+                i += 1
+                st = float(lst[i])
+                i += 1
+                dct2.update({idx: [ut, st]})
+            count = 0
+            for key, val in dct2.items():
+                if key not in dct1.keys():
+                    count += 1
+                    continue
+                elem = dct1[key]
+                if val[0] != elem[0] or val[1] != elem[1]:
+                    count += 1
+            row.append(count)
+            row.append(len(dct2))
+            rows.append(row)
+
+    # remove the file
+    if cleanup and filename.exists():
+        filename.unlink()
+
+    # return results
+    return start_time, np.array(rows)
