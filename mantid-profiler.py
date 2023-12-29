@@ -143,6 +143,7 @@ def htmlProfile(
     cpu_data=None,
     disk_x=None,
     disk_data=None,
+    disk_in_bytes=False,
     algm_records=None,
     fill_factor=0,
     nthreads=0,
@@ -217,7 +218,10 @@ def htmlProfile(
     htmlFile.write("  'yaxis3': {\n")  # middle - disk
     htmlFile.write("    'domain' : [0.45, 0.6],\n")
     htmlFile.write("    'anchor' : 'x',\n")
-    htmlFile.write("    'title': 'Gbps',\n")
+    if disk_in_bytes:
+        htmlFile.write("    'title': 'GBps',\n")
+    else:
+        htmlFile.write("    'title': 'Gbps',\n")
     htmlFile.write("    'side': 'left',\n")
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    },\n")
@@ -300,6 +304,8 @@ def main():
 
     parser.add_argument("--height", type=int, default=800, help="height for html plot")
 
+    parser.add_argument("--bytes", action="store_true", help="Report disk speed in GBps rather than Gbps")
+
     parser.add_argument(
         "--mintime",
         type=float,
@@ -314,7 +320,9 @@ def main():
 
     # start the disk monitor in a separate thread
     diskthread = Thread(
-        target=diskmonitor, args=(args.pid,), kwargs={"logfile": args.diskfile, "interval": args.interval}
+        target=diskmonitor,
+        args=(args.pid,),
+        kwargs={"logfile": args.diskfile, "interval": args.interval, "show_bytes": args.bytes},
     )
     diskthread.start()
 
@@ -371,6 +379,7 @@ def main():
         cpu_data=cpu_data,
         disk_x=disk_x,
         disk_data=disk_data,
+        disk_in_bytes=args.bytes,
         algm_records=records,
         fill_factor=fill_factor,
         nthreads=nthreads,

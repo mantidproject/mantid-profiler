@@ -46,6 +46,7 @@ You can interact with a demo profile [here](http://www.nbi.dk/~nvaytet/SNSPowder
 - `--interval INTERVAL`  how long to wait between each sample (in seconds). By default the process is sampled as often as possible. (default: None)
 - `--noclean`             remove files upon successful completion (default: False)
 - `--height HEIGHT`      height for html plot (default: 800)
+- `--bytes`               Report disk speed in GBps rather than Gbps (default: False)
 - `--mintime MINTIME`    minimum duration for an algorithm to appear inthe profiling graph (in seconds). (default: 0.1)
 
 ## Similar projects

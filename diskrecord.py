@@ -8,7 +8,7 @@ import psutil
 from time_util import get_current_time, get_start_time
 
 
-def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
+def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool = False) -> None:
     """Monitor the disk usage of the supplied process id
     The interval defaults to 0.05 if not supplied"""
     # change interval to reasonable default
@@ -42,7 +42,9 @@ def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
         handle.write("START_TIME: {}\n".format(starting_point))
 
         # conversion factor of bytes per sec to Giga-bits per second - 8 bits in a byte
-        to_Gbps = 8.0 / 1000.0 / 1000.0 / 1000.0
+        conversion_to_size = 1e-9
+        if not show_bytes:
+            conversion_to_size = 8.0 * conversion_to_size
 
         # main event loop
         try:
@@ -57,11 +59,19 @@ def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
                         continue
 
                     # calculate bytes amount per second
-                    read_char_per_sec = to_Gbps * (disk_after.read_chars - disk_before.read_chars) / delta_time
-                    write_char_per_sec = to_Gbps * (disk_after.write_chars - disk_before.write_chars) / delta_time
+                    read_char_per_sec = (
+                        conversion_to_size * (disk_after.read_chars - disk_before.read_chars) / delta_time
+                    )
+                    write_char_per_sec = (
+                        conversion_to_size * (disk_after.write_chars - disk_before.write_chars) / delta_time
+                    )
 
-                    read_byte_per_sec = to_Gbps * (disk_after.read_bytes - disk_before.read_bytes) / delta_time
-                    write_byte_per_sec = to_Gbps * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
+                    read_byte_per_sec = (
+                        conversion_to_size * (disk_after.read_bytes - disk_before.read_bytes) / delta_time
+                    )
+                    write_byte_per_sec = (
+                        conversion_to_size * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
+                    )
 
                     # write information to the log file
                     handle.write(
