@@ -111,7 +111,7 @@ def treeNodeToHtml(node, lmax, sync_time, header, count, tot_time):
     outputString += "hoverinfo: 'text',\n"
     outputString += "type: 'scatter',\n"
     outputString += "xaxis: 'x',\n"
-    outputString += "yaxis: 'y3',\n"
+    outputString += "yaxis: 'y4',\n"
     outputString += "showlegend: false,\n"
     outputString += "};\n"
 
@@ -149,6 +149,7 @@ def htmlProfile(
     lmax=0,
     sync_time=0,
     header=None,
+    html_height=800,
 ):
     htmlFile = open(filename, "w")
     htmlFile.write("<head>\n")
@@ -175,13 +176,12 @@ def htmlProfile(
 
     # read chars
     htmlFile.write("  var trace4 = {\n")
-    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y2", label="Read Mbps")
-    print("READ:", disk_x.shape, disk_data[:, 1].shape)
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y3", label="Read")
     htmlFile.write("};\n")
 
     # write chars
     htmlFile.write("  var trace5 = {\n")
-    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y2", label="Write Mbps")
+    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y3", label="Write")
     htmlFile.write("};\n")
 
     count = 6
@@ -195,27 +195,34 @@ def htmlProfile(
 
     htmlFile.write("var data = " + dataString + ";\n")
     htmlFile.write("var layout = {\n")
-    htmlFile.write("  'height': 700,\n")
+    htmlFile.write("  'height': {},\n".format(html_height))
     htmlFile.write("  'xaxis' : {\n")
     htmlFile.write("    'domain' : [0, 1.0],\n")
     htmlFile.write("    'title' : 'Time (s)',\n")
     htmlFile.write("    'side' : 'top',\n")
     htmlFile.write("  },\n")
-    htmlFile.write("  'yaxis1': {\n")
-    htmlFile.write("    'domain' : [0.5, 1.0],\n")
+    htmlFile.write("  'yaxis1': {\n")  # upper - CPU on left
+    htmlFile.write("    'domain' : [0.6, 1.0],\n")
     htmlFile.write("    'title': 'CPU (%)',\n")
     htmlFile.write("    'side': 'left',\n")
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    },\n")
-    htmlFile.write("  'yaxis2': {\n")
+    htmlFile.write("  'yaxis2': {\n")  # upper - RAM on right
     htmlFile.write("    'title': 'RAM (GB)',\n")
     htmlFile.write("    'overlaying': 'y1',\n")
     htmlFile.write("    'side': 'right',\n")
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    'showgrid': false,\n")
     htmlFile.write("    },\n")
-    htmlFile.write("  'yaxis3': {\n")
-    htmlFile.write("    'domain' : [0, 0.5],\n")
+    htmlFile.write("  'yaxis3': {\n")  # middle - disk
+    htmlFile.write("    'domain' : [0.45, 0.6],\n")
+    htmlFile.write("    'anchor' : 'x',\n")
+    htmlFile.write("    'title': 'Gbps',\n")
+    htmlFile.write("    'side': 'left',\n")
+    htmlFile.write("    'fixedrange': true,\n")
+    htmlFile.write("    },\n")
+    htmlFile.write("  'yaxis4': {\n")  # lower - algorithm annotations
+    htmlFile.write("    'domain' : [0, 0.45],\n")
     htmlFile.write("    'anchor' : 'x',\n")
     htmlFile.write("    'showgrid': false,\n")
     htmlFile.write("    'ticks': '',\n")
@@ -261,7 +268,9 @@ def htmlProfile(
 
 # Main function to launch process monitor and create interactive HTML plot
 def main():
-    parser = argparse.ArgumentParser(description="Profile a Mantid workflow")
+    parser = argparse.ArgumentParser(
+        description="Profile a Mantid workflow", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     parser.add_argument("pid", type=int, help="the process id")
 
@@ -288,6 +297,8 @@ def main():
     )
 
     parser.add_argument("--noclean", action="store_true", help="remove files upon successful completion")
+
+    parser.add_argument("--height", type=int, default=800, help="height for html plot")
 
     parser.add_argument(
         "--mintime",
@@ -342,17 +353,6 @@ def main():
     sync_time, disk_data = parse_disk_log(args.diskfile, cleanup=not args.noclean)
     # Time series
     disk_x = disk_data[:, 0] - sync_time
-    """
-    print('='*30)
-    print(disk_data.shape)
-    print(disk_data)
-    print('-'*30)
-    disk_data = np.transpose(disk_data)
-    print(disk_data.shape)
-    print(disk_data)
-    print('-'*30)
-    print(sync_time)
-    """
 
     # Read in CPU and memory activity log
     args.logfile = Path(args.logfile)
@@ -378,6 +378,7 @@ def main():
         lmax=lmax,
         sync_time=sync_time,
         header=header,
+        html_height=args.height,
     )
 
 
