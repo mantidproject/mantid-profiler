@@ -8,7 +8,7 @@ import psutil
 from time_util import get_current_time, get_start_time
 
 
-def monitor(pid: int, logfile: str, interval: Optional[float]):
+def monitor(pid: int, logfile: str, interval: Optional[float]) -> None:
     """Monitor the disk usage of the supplied process id
     The interval defaults to 0.05 if not supplied"""
     # change interval to reasonable default

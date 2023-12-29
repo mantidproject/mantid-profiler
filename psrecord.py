@@ -91,7 +91,7 @@ def update_children(old_children, new_children):  # old children - dict, new_chi
     old_children.update(updct)
 
 
-def monitor(pid: int, logfile: str, interval: Optional[float]):
+def monitor(pid: int, logfile: str, interval: Optional[float]) -> None:
     # We import psutil here so that the module can be imported even if psutil
     # is not present (for example if accessing the version)
     import psutil
@@ -186,9 +186,9 @@ def monitor(pid: int, logfile: str, interval: Optional[float]):
 
 # Parse the logfile outputted by psrecord
 def parse_log(filename: Path, cleanup: bool = True):
-    rows = []
-    dct1 = {}  # starts out uninitialzed
-    dct2 = {}
+    rows: list = []
+    dct1: dict = {}  # starts out uninitialzed
+    dct2: dict = {}
     start_time = 0.0
     with open(filename, "r") as f:
         for line in f:
