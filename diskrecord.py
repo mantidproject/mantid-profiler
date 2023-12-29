@@ -8,7 +8,7 @@ import psutil
 from time_util import get_current_time, get_start_time
 
 
-def monitor(pid: int, logfile: str, interval: Optional[float]) -> None:
+def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
     """Monitor the disk usage of the supplied process id
     The interval defaults to 0.05 if not supplied"""
     # change interval to reasonable default
@@ -93,9 +93,7 @@ def parse_log(filename: Path, cleanup: bool = True):
     with open(filename, "r") as handle:
         for line in handle:
             line = line.strip()
-            if not line:  # skip empty lines
-                continue
-            elif line.startswith("#"):  # skip comment lines
+            if line.startswith("#") or not line:  # skip comment and empty lines
                 continue
             elif line.startswith("START_TIME:"):
                 start_time = float(line.split()[-1])

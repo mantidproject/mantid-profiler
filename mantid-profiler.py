@@ -274,18 +274,18 @@ def main():
 
     parser.add_argument("pid", type=int, help="the process id")
 
-    parser.add_argument("--outfile", type=str, default="profile.html", help="name of output html file")
+    parser.add_argument("--outfile", type=Path, default="profile.html", help="name of output html file")
 
     parser.add_argument(
-        "--infile", type=str, default="algotimeregister.out", help="name of input file containing algorithm timings"
+        "--infile", type=Path, default="algotimeregister.out", help="name of input file containing algorithm timings"
     )
 
     parser.add_argument(
-        "--logfile", type=str, default="mantidprofile.txt", help="name of output file containing process monitor data"
+        "--logfile", type=Path, default="mantidprofile.txt", help="name of output file containing process monitor data"
     )
 
     parser.add_argument(
-        "--diskfile", type=str, default="mantiddisk.txt", help="name of output file containing process disk usage data"
+        "--diskfile", type=Path, default="mantiddisk.txt", help="name of output file containing process disk usage data"
     )
 
     parser.add_argument(
@@ -355,7 +355,6 @@ def main():
     disk_x = disk_data[:, 0] - sync_time
 
     # Read in CPU and memory activity log
-    args.logfile = Path(args.logfile)
     sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
     # Time series
     cpu_x = cpu_data[:, 0] - sync_time

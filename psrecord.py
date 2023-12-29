@@ -36,42 +36,32 @@ from time import sleep
 from typing import Optional
 
 import numpy as np
+import psutil
 
 from time_util import get_current_time, get_start_time
 
 
 # returns percentage for system + user time
 def get_percent(process):
-    try:
-        return process.cpu_percent()
-    except AttributeError:
-        return process.get_cpu_percent()
+    return process.cpu_percent()
 
 
 def get_memory(process):
-    try:
-        return process.memory_info()
-    except AttributeError:
-        return process.get_memory_info()
+    return process.memory_info()
 
 
 def get_threads(process):
-    try:
-        return process.threads()
-    except AttributeError:
-        return process.get_threads()
+    return process.threads()
 
 
-def all_children(pr):
+def all_children(pr: psutil.Process) -> list[psutil.Process]:
     try:
         return pr.children(recursive=True)
-    except AttributeError:
-        return pr.get_children(recursive=True)
     except Exception:  # noqa: BLE001
         return []
 
 
-def update_children(old_children, new_children):  # old children - dict, new_children - list
+def update_children(old_children: dict[int, psutil.Process], new_children: list[psutil.Process]):
     new_dct = {}
     for ch in new_children:
         new_dct.update({ch.pid: ch})
@@ -91,11 +81,7 @@ def update_children(old_children, new_children):  # old children - dict, new_chi
     old_children.update(updct)
 
 
-def monitor(pid: int, logfile: str, interval: Optional[float]) -> None:
-    # We import psutil here so that the module can be imported even if psutil
-    # is not present (for example if accessing the version)
-    import psutil
-
+def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
     # change None to reasonable default
     if interval is None:
         interval = 0.0
@@ -187,25 +173,21 @@ def monitor(pid: int, logfile: str, interval: Optional[float]) -> None:
 # Parse the logfile outputted by psrecord
 def parse_log(filename: Path, cleanup: bool = True):
     rows: list = []
-    dct1: dict = {}  # starts out uninitialzed
+    dct1: dict = {}  # starts out uninitialized
     dct2: dict = {}
     start_time = 0.0
-    with open(filename, "r") as f:
-        for line in f:
-            if "#" in line:
+    with open(filename, "r") as handle:
+        for line in handle:
+            line = line.strip()
+            if line.startswith("#") or not line:
                 continue
-            if "START_TIME:" in line:
-                start_time = float(line.split()[1])
+            elif line.startswith("START_TIME:"):
+                start_time = float(line.split()[-1])
                 continue
-            line = line.replace("[", "")
-            line = line.replace("]", "")
-            line = line.replace("(", "")
-            line = line.replace(")", "")
-            line = line.replace(",", "")
-            line = line.replace("pthread", "")
-            line = line.replace("id=", "")
-            line = line.replace("user_time=", "")
-            line = line.replace("system_time=", "")
+
+            # remove unwanted characters/strings
+            for item in ("[", "]", "(", ")", ",", "pthread", "id=", "user_time=", "system_time="):
+                line = line.replace(item, "")
             row = []
             lst = line.split()
             for i in range(4):
@@ -232,6 +214,7 @@ def parse_log(filename: Path, cleanup: bool = True):
             row.append(count)
             row.append(len(dct2))
             rows.append(row)
+
     # remove the file
     if cleanup and filename.exists():
         filename.unlink()
