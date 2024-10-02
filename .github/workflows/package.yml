@@ -28,7 +28,7 @@ jobs:
         run: |
           python -m build --wheel --no-isolation
           check-wheel-contents dist/mantidprofiler-*.whl
-          
+
       - name: build conda package
         run: |
           # set up environment
