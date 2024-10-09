@@ -1,0 +1,18 @@
+name: mantid-profiler
+channels:
+  - conda-forge
+dependencies:
+  - anaconda-client
+  - boa
+  - check-wheel-contents
+  - conda-build < 4
+  - conda-verify
+  - libmamba
+  - libarchive
+  - pre-commit
+  - psutil
+  - python-build
+  - setuptools
+  - toml
+  - versioningit
+  - wheel

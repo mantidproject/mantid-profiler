@@ -4,7 +4,6 @@ from typing import Optional
 
 import numpy as np
 import psutil
-
 from time_util import get_current_time, get_start_time
 
 

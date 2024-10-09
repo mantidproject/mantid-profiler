@@ -20,9 +20,8 @@ import sys
 from pathlib import Path
 from threading import Thread
 
-import numpy as np
-
 import algorithm_tree as at
+import numpy as np
 from diskrecord import monitor as diskmonitor
 from diskrecord import parse_log as parse_disk_log
 from psrecord import monitor as cpumonitor
