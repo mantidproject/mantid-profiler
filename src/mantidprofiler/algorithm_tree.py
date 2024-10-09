@@ -134,8 +134,14 @@ def apply_multiple_trees(trees, check, func):
 
 
 def parseLine(line):
-    res = re.search("ThreadID=([0-9]*), AlgorithmName=(.*), StartTime=([0-9]*), EndTime=([0-9]*)", line)
-    return {"thread_id": res.group(1), "name": res.group(2), "start": int(res.group(3)), "finish": int(res.group(4))}
+    res = {
+        "thread_id": re.search("ThreadID=([0-9]*)", line)[0],
+        "name": re.search("AlgorithmName=(.*)", line)[0],
+        "start": int(re.search("StartTime=([0-9]*)", line)[0]),
+        "finish": int(re.search("EndTime=([0-9]*)", line)[0]),
+    }
+
+    return res
 
 
 def fromFile(fileName: Path, cleanup: bool = True):
