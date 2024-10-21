@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import psutil
+from children_util import all_children, update_children
 from time_util import get_current_time, get_start_time
 
 
@@ -40,6 +41,10 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
         )
         handle.write("START_TIME: {}\n".format(starting_point))
 
+        children = {}
+        for ch in all_children(process):
+            children.update({ch.pid: {"process": ch, "disk_before": ch.io_counters}})
+
         # conversion factor of bytes per sec to Giga-bits per second - 8 bits in a byte
         conversion_to_size = 1e-9
         if not show_bytes:
@@ -71,6 +76,41 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
                     write_byte_per_sec = (
                         conversion_to_size * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
                     )
+
+                    # get information from children
+                    update_children(children, all_children(process))
+                    for key, child in children.items():
+                        try:
+                            child_disk_after = child["process"].io_counters()
+
+                            read_char_per_sec += (
+                                conversion_to_size
+                                * (child_disk_after.read_chars - child["disk_before"].read_chars)
+                                / delta_time
+                            )
+
+                            write_char_per_sec += (
+                                conversion_to_size
+                                * (child_disk_after.write_chars - child["disk_before"].write_chars)
+                                / delta_time
+                            )
+
+                            read_byte_per_sec += (
+                                conversion_to_size
+                                * (child_disk_after.read_bytes - child["disk_before"].read_bytes)
+                                / delta_time
+                            )
+
+                            write_byte_per_sec += (
+                                conversion_to_size
+                                * (child_disk_after.write_bytes - child["disk_before"].write_bytes)
+                                / delta_time
+                            )
+
+                            child["disk_before"] = child_disk_after
+
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            continue
 
                     # write information to the log file
                     handle.write(
