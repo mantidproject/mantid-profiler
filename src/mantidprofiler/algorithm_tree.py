@@ -136,7 +136,7 @@ def apply_multiple_trees(trees, check, func):
 def parseLine(line):
     res = {
         "thread_id": re.search("ThreadID=([0-9]*)", line)[1],
-        "name": re.search("AlgorithmName=(.*)", line)[1],
+        "name": re.search("AlgorithmName=([a-zA-Z]*)", line)[1],
         "start": int(re.search("StartTime=([0-9]*)", line)[1]),
         "finish": int(re.search("EndTime=([0-9]*)", line)[1]),
     }
