@@ -41,7 +41,6 @@ You can interact with a demo profile [here](http://www.nbi.dk/~nvaytet/SNSPowder
 - `-h`, `--help`          show this help message and exit
 - `--outfile OUTFILE`    name of output html file (default: `profile.html`)
 - `--infile INFILE`      name of input file containing algorithm timings (default: `algotimeregister.out`)
-  -
 - `--logfile LOGFILE`    name of output file containing process monitor data (default: `mantidprofile.txt`)
 - `--diskfile DISKFILE`  name of output file containing process disk usage data (default: `mantiddisk.txt`)
 - `--interval INTERVAL`  how long to wait between each sample (in seconds). By default the process is sampled as often as possible. (default: None)
