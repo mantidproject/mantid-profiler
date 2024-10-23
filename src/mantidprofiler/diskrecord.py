@@ -43,7 +43,7 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
 
         children = {}
         for ch in all_children(process):
-            children.update({ch.pid: {"process": ch, "disk_before": ch.io_counters}})
+            children.update({ch.pid: {"process": ch, "disk_before": ch.io_counters()}})
 
         # conversion factor of bytes per sec to Giga-bits per second - 8 bits in a byte
         conversion_to_size = 1e-9
