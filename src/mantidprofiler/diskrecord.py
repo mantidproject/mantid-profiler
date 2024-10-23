@@ -79,7 +79,7 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
 
                     # get information from children
                     update_children(children, all_children(process))
-                    for key, child in children.items():
+                    for child in children.values():
                         try:
                             child_disk_after = child["process"].io_counters()
 
