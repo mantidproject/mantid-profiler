@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import psutil
+from children_util import all_children
 from time_util import get_current_time, get_start_time
 
 
@@ -26,6 +27,10 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
     last_time = start_time
 
     disk_before = process.io_counters()
+
+    children_before = {}
+    for ch in all_children(process):
+        children_before.update({ch.pid: {"process": ch, "disk": ch.io_counters()}})
 
     with open(logfile, "w") as handle:
         # add header
@@ -72,6 +77,31 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
                         conversion_to_size * (disk_after.write_bytes - disk_before.write_bytes) / delta_time
                     )
 
+                    # get information from children
+                    children_after = {}
+                    for ch in all_children(process):
+                        # format the children dict
+                        children_after.update({ch.pid: {"process": ch, "disk": ch.io_counters()}})
+
+                        # initialize change with new child
+                        read_char_diff = children_after[ch.pid]["disk"].read_chars
+                        write_char_diff = children_after[ch.pid]["disk"].write_chars
+                        read_byte_diff = children_after[ch.pid]["disk"].read_bytes
+                        write_byte_diff = children_after[ch.pid]["disk"].write_bytes
+
+                        # subtract change from last iteration, if child already existed
+                        if ch.pid in children_before.keys():
+                            read_char_diff -= children_before[ch.pid]["disk"].read_chars
+                            write_char_diff -= children_before[ch.pid]["disk"].write_chars
+                            read_byte_diff -= children_before[ch.pid]["disk"].read_bytes
+                            write_byte_diff -= children_before[ch.pid]["disk"].write_bytes
+
+                        # add to totals
+                        read_char_per_sec += conversion_to_size * read_char_diff / delta_time
+                        write_char_per_sec += conversion_to_size * write_char_diff / delta_time
+                        read_byte_per_sec += conversion_to_size * read_byte_diff / delta_time
+                        write_byte_per_sec += conversion_to_size * write_byte_diff / delta_time
+
                     # write information to the log file
                     handle.write(
                         "{0:12.6f} {1:12.3f} {2:12.3f} {3:12.3f} {4}\n".format(
@@ -85,6 +115,7 @@ def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool
 
                     # copy over information to new previous
                     disk_before = disk_after
+                    children_before = children_after
                     last_time = current_time
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     break  # all done

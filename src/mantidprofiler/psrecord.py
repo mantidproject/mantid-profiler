@@ -37,6 +37,7 @@ from typing import Optional
 
 import numpy as np
 import psutil
+from children_util import all_children, update_children
 from time_util import get_current_time, get_start_time
 
 
@@ -51,33 +52,6 @@ def get_memory(process):
 
 def get_threads(process):
     return process.threads()
-
-
-def all_children(pr: psutil.Process) -> list[psutil.Process]:
-    try:
-        return pr.children(recursive=True)
-    except Exception:  # noqa: BLE001
-        return []
-
-
-def update_children(old_children: dict[int, psutil.Process], new_children: list[psutil.Process]):
-    new_dct = {}
-    for ch in new_children:
-        new_dct.update({ch.pid: ch})
-
-    todel = []
-    for pid in old_children.keys():
-        if pid not in new_dct.keys():
-            todel.append(pid)
-
-    for pid in todel:
-        del old_children[pid]
-
-    updct = {}
-    for pid in new_dct.keys():
-        if pid not in old_children.keys():
-            updct.update({pid: new_dct[pid]})
-    old_children.update(updct)
 
 
 def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
