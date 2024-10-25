@@ -4,8 +4,9 @@ from typing import Optional
 
 import numpy as np
 import psutil
-from children_util import all_children
-from time_util import get_current_time, get_start_time
+
+from mantidprofiler.children_util import all_children
+from mantidprofiler.time_util import get_current_time, get_start_time
 
 
 def monitor(pid: int, logfile: Path, interval: Optional[float], show_bytes: bool = False) -> None:

@@ -11,6 +11,10 @@ homepage = "https://github.com/mantidproject/mantid-profiler/"
 repository = "https://github.com/mantidproject/mantid-profiler/"
 issues = "https://github.com/mantidproject/mantid-profiler/issues"
 
+[project.scripts]
+mantidprofiler = "mantidprofiler.mantidprofiler:main"
+
+
 [build-system]
 requires = ["setuptools", "wheel", "toml", "versioningit"]
 build-backend = "setuptools.build_meta"
