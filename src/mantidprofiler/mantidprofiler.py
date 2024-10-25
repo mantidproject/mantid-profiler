@@ -20,12 +20,13 @@ import sys
 from pathlib import Path
 from threading import Thread
 
-import algorithm_tree as at
 import numpy as np
-from diskrecord import monitor as diskmonitor
-from diskrecord import parse_log as parse_disk_log
-from psrecord import monitor as cpumonitor
-from psrecord import parse_log as parse_cpu_log
+
+import mantidprofiler.algorithm_tree as at
+from mantidprofiler.diskrecord import monitor as diskmonitor
+from mantidprofiler.diskrecord import parse_log as parse_disk_log
+from mantidprofiler.psrecord import monitor as cpumonitor
+from mantidprofiler.psrecord import parse_log as parse_cpu_log
 
 
 # Convert string to RGB color

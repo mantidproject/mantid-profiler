@@ -37,8 +37,9 @@ from typing import Optional
 
 import numpy as np
 import psutil
-from children_util import all_children, update_children
-from time_util import get_current_time, get_start_time
+
+from mantidprofiler.children_util import all_children, update_children
+from mantidprofiler.time_util import get_current_time, get_start_time
 
 
 # returns percentage for system + user time

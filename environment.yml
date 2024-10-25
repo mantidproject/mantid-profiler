@@ -9,6 +9,7 @@ dependencies:
   - conda-verify
   - libmamba
   - libarchive
+  - numpy
   - pre-commit
   - psutil
   - python-build
