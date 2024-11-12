@@ -55,7 +55,7 @@ You can interact with a demo profile [here](http://www.nbi.dk/~nvaytet/SNSPowder
 
 ## Related Documentation
 
-- [Mantid's AlgoTimeRegister](https://github.com/mantidproject/mantid/blob/main/docs/source/api/python/mantid/api/AlgoTimeRegister.rst) explains the under-the-hood of the timing mechanism.
+- [Mantid's AlgoTimeRegister](https://docs.mantidproject.org/api/python/mantid/api/AlgoTimeRegister.html) explains the under-the-hood of the timing mechanism.
 - [Mantid developer profiler documentation](https://github.com/mantidproject/mantid/blob/main/dev-docs/source/AlgorithmProfiler.rst) provides additional information as to how it works with mantid.
 - [Mantid User Properties File](https://github.com/mantidproject/mantid/blob/main/docs/source/concepts/PropertiesFile.rst#algorithm-profiling-settings) has some fields to be noted.
 
