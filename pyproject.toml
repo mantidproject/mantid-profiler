@@ -53,3 +53,26 @@ platforms = ["linux-64"]
 mantidprofiler = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+
+[tool.pixi.feature.mantid-profiler]
+channels = ["conda-forge"]
+
+[tool.pixi.feature.mantid-profiler.dependencies]
+anaconda-client = "*"
+boa = "*"
+check-wheel-contents = "*"
+conda-build = "<4"
+conda-verify = "*"
+libmamba = "*"
+libarchive = "*"
+numpy = "*"
+pre-commit = "*"
+psutil = "*"
+python-build = "*"
+setuptools = "*"
+toml = "*"
+versioningit = "*"
+wheel = "*"
+
+[tool.pixi.environments]
+mantid-profiler = { features = ["mantid-profiler"], no-default-feature = true }
