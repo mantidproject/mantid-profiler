@@ -76,3 +76,6 @@ wheel = "*"
 
 [tool.pixi.environments]
 mantid-profiler = { features = ["mantid-profiler"], no-default-feature = true }
+
+[tool.pixi.dependencies]
+numpy = ">=2.3.5,<3"
