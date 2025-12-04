@@ -79,3 +79,4 @@ mantid-profiler = { features = ["mantid-profiler"], no-default-feature = true }
 
 [tool.pixi.dependencies]
 numpy = ">=2.3.5,<3"
+psutil = ">=7.1.3,<8"
