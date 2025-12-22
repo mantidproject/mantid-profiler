@@ -59,6 +59,7 @@ psutil = ">=5.8.0" # mantidworkbench requires this, but mantid does not
 
 [tool.pixi.feature.package.dependencies]
 anaconda-client = "*"
+boa = "*"
 check-wheel-contents = "*"
 conda-build = "*"
 conda-verify = "*"

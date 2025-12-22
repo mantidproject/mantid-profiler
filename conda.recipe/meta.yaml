@@ -37,6 +37,7 @@ requirements:
 
   run:
     - python
+    - psutil>=5.8.0
 
 about:
   home: {{ url }}

@@ -19,20 +19,22 @@ jobs:
         with:
           frozen: true
       - name: build and verify wheel
+        shell: pixi run bash -e {0}
         run: |
-          pixi run python -m build --wheel --no-isolation
-          pixi run check-wheel-contents dist/mantidprofiler-*.whl
+          python -m build --wheel --no-isolation
+          check-wheel-contents dist/mantidprofiler-*.whl
 
       - name: build conda package
+        shell: pixi run bash -e {0}
         run: |
           # set up environment
           cd conda.recipe
-          echo "versioningit $(pixi run versioningit ../)"
+          echo "versioningit $(versioningit ../)"
           # build the package
-          VERSION=$(pixi run versioningit ../) pixi run conda mambabuild --channel conda-forge --output-folder . .
+          VERSION=$(versioningit ../) conda mambabuild --channel conda-forge --output-folder . .
           conda verify noarch/mantidprofiler*.tar.bz2
       - name: upload conda package to anaconda
-        shell: bash -l {0}
+        shell: pixi run bash -e {0}
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
@@ -42,4 +44,4 @@ jobs:
           CONDA_LABEL="main"
           if [ "${IS_RC}" = "true" ]; then CONDA_LABEL="rc"; fi
           echo pushing ${{ github.ref }} with label $CONDA_LABEL
-          pixi run anaconda upload --label $CONDA_LABEL conda.recipe/noarch/mantidprofiler*.tar.bz2
+          anaconda upload --label $CONDA_LABEL conda.recipe/noarch/mantidprofiler*.tar.bz2
