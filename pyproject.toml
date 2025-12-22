@@ -4,7 +4,7 @@ description = "Uses psrecord and plotly.js to profile a mantid workflow"
 dynamic = ["version"]
 requires-python = ">=3.10"
 readme = "README.md"
-license = { text = "GPL3.0" }
+license = { text = "GPL-3.0-or-later" }
 
 [project.urls]
 homepage = "https://github.com/mantidproject/mantid-profiler/"
@@ -59,11 +59,9 @@ psutil = ">=5.8.0" # mantidworkbench requires this, but mantid does not
 
 [tool.pixi.feature.package.dependencies]
 anaconda-client = "*"
-boa = "*"
 check-wheel-contents = "*"
-conda-build = "*"
-conda-verify = "*"
 python-build = "*"
+rattler-build = "*"
 setuptools = "*"
 
 [tool.pixi.feature.developer.dependencies]

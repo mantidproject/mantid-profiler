@@ -30,9 +30,8 @@ jobs:
           # set up environment
           cd conda.recipe
           echo "versioningit $(versioningit ../)"
-          # build the package
-          VERSION=$(versioningit ../) conda mambabuild --channel conda-forge --output-folder . .
-          conda verify noarch/mantidprofiler*.tar.bz2
+          # build the package - need experimental feature of loading data from pyproject.toml
+          VERSION=$(versioningit ../) rattler-build build -c conda-forge -c mantid --experimental -r .
       - name: upload conda package to anaconda
         shell: pixi run bash -e {0}
         if: startsWith(github.ref, 'refs/tags/v')
