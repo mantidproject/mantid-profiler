@@ -1,0 +1,48 @@
+# load information from pyproject.toml
+# this will get the version set by environment variable
+# change the build number by hand if you want to rebuild the package
+schema_version: 1
+
+context:
+  version: ${{ env.get('VERSION', default='0.0.0') }}
+  build_number: 0
+
+package:
+  name: mantidprofiler
+  version: ${{ version }}
+
+source:
+  path: ..
+
+build:
+  number: ${{ build_number }}
+  string: py${{py}}
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . --no-deps --ignore-installed -vvv
+
+requirements:
+  host:
+    - pip
+    - python
+    - versioningit
+    - setuptools>=42
+    - wheel
+  build:
+    - setuptools>=42
+    - versioningit
+  run:
+    - mantid>6.10 # only framework
+    - python
+    - psutil>=5.8.0
+tests:
+  - python:
+      imports:
+        - mantid
+        - mantid.kernel
+        - mantidprofiler
+
+about:
+  license: ${{ load_from_file("../pyproject.toml").project.license.text }}
+  license_file: LICENSE
+  summary: ${{ load_from_file("../pyproject.toml").project.description }}
+  homepage: ${{ load_from_file("../pyproject.toml").project.urls.homepage }}
