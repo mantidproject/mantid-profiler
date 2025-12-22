@@ -310,7 +310,7 @@ def main():
         "--mintime",
         type=float,
         default=0.1,
-        help="minimum duration for an algorithm to appear in" "the profiling graph (in seconds).",
+        help="minimum duration for an algorithm to appear in the profiling graph (in seconds).",
     )
 
     # parse command line arguments
