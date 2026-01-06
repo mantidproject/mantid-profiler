@@ -43,4 +43,4 @@ jobs:
           CONDA_LABEL="main"
           if [ "${IS_RC}" = "true" ]; then CONDA_LABEL="rc"; fi
           echo pushing ${{ github.ref }} with label $CONDA_LABEL
-          anaconda upload --label $CONDA_LABEL conda.recipe/noarch/mantidprofiler*.tar.bz2
+          anaconda upload --label $CONDA_LABEL conda.recipe/output/noarch/mantidprofiler*.conda
