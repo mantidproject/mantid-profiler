@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# PYTHON_ARGCOMPLETE_OK
 
+import argcomplete
 import argparse
 import sys
 from pathlib import Path
@@ -209,7 +211,7 @@ def htmlProfile(
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    },\n")
     htmlFile.write("  'yaxis2': {\n")  # upper - RAM on right
-    htmlFile.write("    'title': 'RAM (GB)',\n")
+    htmlFile.write("    'title': 'RAM (MB)',\n")
     htmlFile.write("    'overlaying': 'y1',\n")
     htmlFile.write("    'side': 'right',\n")
     htmlFile.write("    'fixedrange': true,\n")
@@ -314,6 +316,7 @@ def main():
     )
 
     # parse command line arguments
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     print(f"Attaching to process {args.pid}")

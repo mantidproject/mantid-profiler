@@ -56,6 +56,7 @@ mantidprofiler = { path = ".", editable = true }
 [tool.pixi.dependencies]
 mantid = ">=6.10"
 psutil = ">=5.8.0" # mantidworkbench requires this, but mantid does not
+argcomplete = ">=3.6.3,<4"
 
 [tool.pixi.feature.package.dependencies]
 anaconda-client = "*"
