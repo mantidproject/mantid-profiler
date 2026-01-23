@@ -8,7 +8,7 @@ It monitors CPU and RAM usage, and reports the time span of each algorithm (curr
 
 ## Pixi
 
-[direnv](https://pixi.prefix.dev/latest/integration/third_party/direnv/) 
+[direnv](https://pixi.prefix.dev/latest/integration/third_party/direnv/)
 automatically activates the pixi environment as soon as you enter the root directory of the repository,
 by parsing an `.envrc` file that you create there.
 We recommend the following contents for the `.envrc` file:
@@ -43,7 +43,7 @@ pixi run --manifest-path /path/to/repo/mantid/pixi.toml SNSPowderReduction.py & 
 The script attaches to the last spawned process, so you can also use the profiler if you are working with `MantidPlot`:
 ```
 ./MantidPlot & mantidprofiler $!
-``` 
+```
 
 ## Requires
 

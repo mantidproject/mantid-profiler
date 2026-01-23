@@ -16,12 +16,12 @@
 
 # PYTHON_ARGCOMPLETE_OK
 
-import argcomplete
 import argparse
 import sys
 from pathlib import Path
 from threading import Thread
 
+import argcomplete
 import numpy as np
 
 import mantidprofiler.algorithm_tree as at
