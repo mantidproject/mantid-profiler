@@ -167,9 +167,9 @@ def htmlProfile(
     writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
     htmlFile.write("};\n")
 
-    # RAM
+    # RAM, in GB
     htmlFile.write("  var trace2 = {\n")
-    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2], x_name="x", y_name="y2", label="RAM")
+    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2] / 1000, x_name="x", y_name="y2", label="RAM")
     htmlFile.write("};\n")
 
     # Active threads
@@ -211,7 +211,7 @@ def htmlProfile(
     htmlFile.write("    'fixedrange': true,\n")
     htmlFile.write("    },\n")
     htmlFile.write("  'yaxis2': {\n")  # upper - RAM on right
-    htmlFile.write("    'title': 'RAM (MB)',\n")
+    htmlFile.write("    'title': 'RAM (GB)',\n")
     htmlFile.write("    'overlaying': 'y1',\n")
     htmlFile.write("    'side': 'right',\n")
     htmlFile.write("    'fixedrange': true,\n")
