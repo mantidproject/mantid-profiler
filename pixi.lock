@@ -1804,8 +1804,8 @@ packages:
   timestamp: 1761151594606
 - pypi: ./
   name: mantidprofiler
-  version: '1.1'
-  sha256: de89888a0b0ad4ddbf879b20268ce33031a699277ef56032f48607bdd936ba34
+  version: '1.2'
+  sha256: 884752783f58c6f65c51aa2dc2465ffd3b8a1eafb5bd33978bbb111213c063e2
   requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.0.0-pyhd8ed1ab_0.conda
   sha256: 7b1da4b5c40385791dbc3cc85ceea9fad5da680a27d5d3cb8bfaa185e304a89e
