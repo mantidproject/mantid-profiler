@@ -77,6 +77,11 @@ You can interact with a demo profile [here](http://www.nbi.dk/~nvaytet/SNSPowder
 - `--bytes`               Report disk speed in GBps rather than Gbps (default: False)
 - `--mintime MINTIME`    minimum duration for an algorithm to appear inthe profiling graph (in seconds). (default: 0.1)
 
+## Notes for developers
+
+The version number for releases is stored in `pyproject.toml` and everything else reads this information.
+To change the version number for a release, either edit the file by hand or `pixi project version minor` to bump the minor version number.
+
 ## Similar projects
 
 [viztracer](https://github.com/gaogaotiantian/viztracer) creates similar information for generic python software

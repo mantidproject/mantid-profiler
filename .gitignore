@@ -1,5 +1,4 @@
 src/mantidprofiler.egg-info/
-src/mantidprofiler/_version.py
 src/mantidprofiler/__pycache__/
 # pixi environments
 .pixi/*
