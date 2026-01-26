@@ -1,5 +1,4 @@
 # load information from pyproject.toml
-# this will get the version set by environment variable
 # change the build number by hand if you want to rebuild the package
 schema_version: 1
 
@@ -24,12 +23,10 @@ requirements:
   host:
     - pip
     - python
-    - versioningit
     - setuptools>=42
     - wheel
   build:
     - setuptools>=42
-    - versioningit
   run:
     - mantid>6.10 # only framework
     - python
