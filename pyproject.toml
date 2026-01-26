@@ -1,7 +1,7 @@
 [project]
 name = "mantidprofiler"
 description = "Uses psrecord and plotly.js to profile a mantid workflow"
-dynamic = ["version"]
+version = "1.1"
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
@@ -15,7 +15,7 @@ issues = "https://github.com/mantidproject/mantid-profiler/issues"
 mantidprofiler = "mantidprofiler.mantidprofiler:main"
 
 [build-system]
-requires = ["setuptools", "wheel", "toml", "versioningit"]
+requires = ["setuptools", "wheel", "toml"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -24,23 +24,10 @@ where = ["src"]
 [tool.setuptools.package-data]
 "*" = ["*.yml","*.yaml","*.ini"]
 
-[tool.versioningit.vcs]
-method = "git"
-default-tag = "0.0.1"
-
-[tool.versioningit.next-version]
-method = "minor"
-
-[tool.versioningit.format]
-distance = "{next_version}.dev{distance}"
-dirty = "{version}+d{build_date:%Y%m%d}"
-distance-dirty = "{next_version}.dev{distance}+d{build_date:%Y%m%d%H%M}"
-
-[tool.versioningit.write]
-file = "src/mantidprofiler/_version.py"
-
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
 # https://beta.ruff.rs/docs/rules/
 select = ["A", "ARG", "BLE", "E", "F", "I", "PT"]
 
@@ -69,7 +56,6 @@ setuptools = "*"
 libarchive = "*"
 pre-commit = "*"
 toml = "*"
-versioningit = "*"
 wheel = "*"
 
 [tool.pixi.environments]

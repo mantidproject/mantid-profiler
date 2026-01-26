@@ -6,6 +6,8 @@ environments:
     - url: https://conda.anaconda.org/mantid/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -200,7 +202,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ukkonen-1.0.1-py311hdf67eae_6.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/unixodbc-2.3.14-h69e2008_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.6.2-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/versioningit-3.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-20.35.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.45.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-filename-1.4.2-pyhe01879c_1.conda
@@ -1803,10 +1804,9 @@ packages:
   timestamp: 1761151594606
 - pypi: ./
   name: mantidprofiler
-  version: 1.1+d20260123
-  sha256: 4892189f2415555c3bbfca6506f8215ceb926ef25543ee65679c1222c3738ca6
+  version: '1.1'
+  sha256: de89888a0b0ad4ddbf879b20268ce33031a699277ef56032f48607bdd936ba34
   requires_python: '>=3.10'
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.0.0-pyhd8ed1ab_0.conda
   sha256: 7b1da4b5c40385791dbc3cc85ceea9fad5da680a27d5d3cb8bfaa185e304a89e
   md5: 5b5203189eb668f042ac2b0826244964
@@ -2827,20 +2827,6 @@ packages:
   - pkg:pypi/urllib3?source=compressed-mapping
   size: 102842
   timestamp: 1765719817255
-- conda: https://conda.anaconda.org/conda-forge/noarch/versioningit-3.3.0-pyhd8ed1ab_0.conda
-  sha256: 4b9a3f6738ab6e241b12b2fe9258f7e051678b911ca0f0ab042becc29096ff51
-  md5: 57b96d99ac0f5a548f7001618db6a561
-  depends:
-  - importlib-metadata >=3.6
-  - packaging >=17.1
-  - python >=3.9
-  - tomli >=1.2,<3.0
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/versioningit?source=hash-mapping
-  size: 167034
-  timestamp: 1751113901223
 - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-20.35.4-pyhd8ed1ab_0.conda
   sha256: 77193c99c6626c58446168d3700f9643d8c0dab1f6deb6b9dd039e6872781bfb
   md5: cfccfd4e8d9de82ed75c8e2c91cab375

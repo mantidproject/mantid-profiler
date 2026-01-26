@@ -17,7 +17,6 @@
 # PYTHON_ARGCOMPLETE_OK
 
 import argparse
-import sys
 from pathlib import Path
 from threading import Thread
 
@@ -25,6 +24,7 @@ import argcomplete
 import numpy as np
 
 import mantidprofiler.algorithm_tree as at
+from mantidprofiler import __version__
 from mantidprofiler.diskrecord import monitor as diskmonitor
 from mantidprofiler.diskrecord import parse_log as parse_disk_log
 from mantidprofiler.psrecord import monitor as cpumonitor
@@ -273,7 +273,7 @@ def htmlProfile(
 
 
 # Main function to launch process monitor and create interactive HTML plot
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Profile a Mantid workflow", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -315,9 +315,11 @@ def main():
         help="minimum duration for an algorithm to appear in the profiling graph (in seconds).",
     )
 
+    parser.add_argument("--version", action="version", version=f"mantidprofiler {__version__}")
+
     # parse command line arguments
     argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)  # allow getting them supplied to `main()` in tests
 
     print(f"Attaching to process {args.pid}")
 
@@ -391,7 +393,3 @@ def main():
         header=header,
         html_height=args.height,
     )
-
-
-if __name__ == "__main__":
-    sys.exit(main())

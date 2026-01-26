@@ -4,7 +4,7 @@
 schema_version: 1
 
 context:
-  version: ${{ env.get('VERSION', default='0.0.0') }}
+  version: ${{ load_from_file("../pyproject.toml").project.version }}
   build_number: 0
 
 package:
