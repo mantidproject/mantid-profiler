@@ -6,12 +6,40 @@ It monitors CPU and RAM usage, and reports the time span of each algorithm (curr
 
 ![screenshot of AlignAndFocusPowderFromFiles](screenshot.png)
 
+## Pixi
+
+[direnv](https://pixi.prefix.dev/latest/integration/third_party/direnv/)
+automatically activates the pixi environment as soon as you enter the root directory of the repository,
+by parsing an `.envrc` file that you create there.
+We recommend the following contents for the `.envrc` file:
+
+```
+watch_file pixi.lock  # invokes the shell-hook whenever pixi.lock changes
+eval "$(pixi shell-hook --change-ps1 false)"
+eval "$(register-python-argcomplete mantidprofiler)"  # register argcomplete
+```
+
 ## Usage
 
 To profile the `SNSPowderReduction.py` workflow:
 ```
 python SNSPowderReduction.py & mantidprofiler $!
 ```
+
+Executable `mantidprofiler` is available in the pixi environment, but sometimes
+you need to run the script in a different environment, one supporting Mantid.
+
+For the "mantid-developer" conda environment:
+```
+conda activate mantid-developer
+(mantid-developer) python SNSPowderReduction.py & pixi run --manifest-path /path/to/repository/mantid-profiler/pyproject.toml mantidprofiler $!
+```
+
+For the pixi environment:
+```
+pixi run --manifest-path /path/to/repo/mantid/pixi.toml SNSPowderReduction.py & pixi run --manifest-path /path/to/repo/mantid-profiler/pyproject.toml mantidprofiler $!
+```
+
 The script attaches to the last spawned process, so you can also use the profiler if you are working with `MantidPlot`:
 ```
 ./MantidPlot & mantidprofiler $!

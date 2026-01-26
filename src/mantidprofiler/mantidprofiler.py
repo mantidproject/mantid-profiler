@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# PYTHON_ARGCOMPLETE_OK
 
 import argparse
 import sys
 from pathlib import Path
 from threading import Thread
 
+import argcomplete
 import numpy as np
 
 import mantidprofiler.algorithm_tree as at
@@ -165,9 +167,9 @@ def htmlProfile(
     writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
     htmlFile.write("};\n")
 
-    # RAM
+    # RAM, in GB
     htmlFile.write("  var trace2 = {\n")
-    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2], x_name="x", y_name="y2", label="RAM")
+    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2] / 1000, x_name="x", y_name="y2", label="RAM")
     htmlFile.write("};\n")
 
     # Active threads
@@ -314,6 +316,7 @@ def main():
     )
 
     # parse command line arguments
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     print(f"Attaching to process {args.pid}")
