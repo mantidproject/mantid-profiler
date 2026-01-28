@@ -3,3 +3,5 @@ src/mantidprofiler/__pycache__/
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+# conda build outputs
+conda.recipe/output/

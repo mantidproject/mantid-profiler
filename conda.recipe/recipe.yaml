@@ -28,14 +28,13 @@ requirements:
   build:
     - setuptools>=42
   run:
-    - mantid>6.10 # only framework
     - python
     - psutil>=5.8.0
+  run_exports:
+    - mantid>6.10 # only framework
 tests:
   - python:
       imports:
-        - mantid
-        - mantid.kernel
         - mantidprofiler
 
 about:

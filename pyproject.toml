@@ -1,7 +1,7 @@
 [project]
 name = "mantidprofiler"
 description = "Uses psrecord and plotly.js to profile a mantid workflow"
-version = "1.2"
+version = "1.3"
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
