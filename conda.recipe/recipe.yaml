@@ -29,6 +29,7 @@ requirements:
     - setuptools>=42
   run:
     - python
+    - argcomplete
     - psutil>=5.8.0
   run_exports:
     - mantid>6.10 # only framework
