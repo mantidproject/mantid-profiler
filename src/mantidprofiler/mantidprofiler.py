@@ -161,7 +161,7 @@ def htmlProfile(
     htmlFile.write("<body>\n")
     htmlFile.write('  <div id="myDiv"></div>\n')
     htmlFile.write("  <script>\n")
-    
+
     trace_count = 0
     if cpu_data:
         # CPU
@@ -169,17 +169,19 @@ def htmlProfile(
         htmlFile.write(f"  var trace{trace_count} = {{\n")
         writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
         htmlFile.write("};\n")
-        
+
         trace_count += 1
         # RAM, in GB
         htmlFile.write(f"  var trace{trace_count} = {{\n")
         writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2] / 1000, x_name="x", y_name="y2", label="RAM")
         htmlFile.write("};\n")
-        
+
         # Active threads
         trace_count += 1
         htmlFile.write(f"  var trace{trace_count} = {{\n")
-        writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads")
+        writeTrace(
+            htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads"
+        )
         htmlFile.write("};\n")
 
     if disk_data:
@@ -205,7 +207,7 @@ def htmlProfile(
         for node in tree.to_list():
             print(node.info)
             if not sync_time:
-               sync_time = (min([x["start"] for x in algm_records]) + header) / 1e9
+                sync_time = (min([x["start"] for x in algm_records]) + header) / 1e9
             htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, trace_count, cpu_x[-1]))
             dataString += ",trace%i" % trace_count if trace_count else "trace%i" % trace_count
             trace_count += 1
@@ -341,7 +343,6 @@ def main(argv=None):
     args = parser.parse_args(argv)  # allow getting them supplied to `main()` in tests
 
     print(f"Attaching to process {args.pid}")
-    
 
     if not args.nodisk:
         # start the disk monitor in a separate thread
@@ -394,7 +395,7 @@ def main(argv=None):
     else:
         disk_x = disk_data = None
         sync_time = 0
-    
+
     if not args.nocpu:
         # Read in CPU and memory activity log
         sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
@@ -408,7 +409,6 @@ def main(argv=None):
     else:
         cpu_data = cpu_x = None
         fill_factor = sync_time = 0
-
 
     # Create HTML output with Plotly
     htmlProfile(
