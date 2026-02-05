@@ -4,7 +4,7 @@ schema_version: 1
 
 context:
   version: ${{ load_from_file("../pyproject.toml").project.version }}
-  build_number: 0
+  build_number: 1
 
 package:
   name: mantidprofiler
@@ -31,7 +31,7 @@ requirements:
     - python
     - argcomplete
     - psutil>=5.8.0
-  run_exports:
+  run_constraints:
     - mantid>6.10 # only framework
 tests:
   - python:
