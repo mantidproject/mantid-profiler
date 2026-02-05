@@ -27,7 +27,7 @@ import mantidprofiler.algorithm_tree as at
 from mantidprofiler import __version__
 from mantidprofiler.diskrecord import monitor as diskmonitor
 from mantidprofiler.diskrecord import parse_log as parse_disk_log
-from mantidprofiler.psrecord import monitor as cpumonitor
+from mantidprofiler.psrecord import monitor as cpumonitor, no_monitor
 from mantidprofiler.psrecord import parse_log as parse_cpu_log
 
 
@@ -359,6 +359,8 @@ def main(argv=None):
     if not args.nocpu:
         # cpu monitor in main thread to prevent early exit
         cpumonitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+    else:
+        no_monitor(int(args.pid), interval=args.interval)
 
     # Read in algorithm timing log and build tree
     try:
