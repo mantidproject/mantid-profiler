@@ -428,3 +428,6 @@ def main(argv=None):
         header=header,
         html_height=args.height,
     )
+
+if __name__ == "__main__":
+    raise SystemExit(main())
