@@ -27,7 +27,8 @@ import mantidprofiler.algorithm_tree as at
 from mantidprofiler import __version__
 from mantidprofiler.diskrecord import monitor as diskmonitor
 from mantidprofiler.diskrecord import parse_log as parse_disk_log
-from mantidprofiler.psrecord import monitor as cpumonitor, no_monitor
+from mantidprofiler.psrecord import monitor as cpumonitor
+from mantidprofiler.psrecord import no_monitor
 from mantidprofiler.psrecord import parse_log as parse_cpu_log
 
 
@@ -428,6 +429,7 @@ def main(argv=None):
         header=header,
         html_height=args.height,
     )
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
