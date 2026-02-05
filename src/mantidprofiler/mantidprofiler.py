@@ -28,6 +28,7 @@ from mantidprofiler import __version__
 from mantidprofiler.diskrecord import monitor as diskmonitor
 from mantidprofiler.diskrecord import parse_log as parse_disk_log
 from mantidprofiler.psrecord import monitor as cpumonitor
+from mantidprofiler.psrecord import no_monitor
 from mantidprofiler.psrecord import parse_log as parse_cpu_log
 
 
@@ -162,38 +163,55 @@ def htmlProfile(
     htmlFile.write('  <div id="myDiv"></div>\n')
     htmlFile.write("  <script>\n")
 
-    # CPU
-    htmlFile.write("  var trace1 = {\n")
-    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
-    htmlFile.write("};\n")
+    trace_count = 0
+    if cpu_data:
+        # CPU
+        trace_count += 1
+        htmlFile.write(f"  var trace{trace_count} = {{\n")
+        writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 1], x_name="x", y_name="y1", label="CPU")
+        htmlFile.write("};\n")
 
-    # RAM, in GB
-    htmlFile.write("  var trace2 = {\n")
-    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2] / 1000, x_name="x", y_name="y2", label="RAM")
-    htmlFile.write("};\n")
+        trace_count += 1
+        # RAM, in GB
+        htmlFile.write(f"  var trace{trace_count} = {{\n")
+        writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 2] / 1000, x_name="x", y_name="y2", label="RAM")
+        htmlFile.write("};\n")
 
-    # Active threads
-    htmlFile.write("  var trace3 = {\n")
-    writeTrace(htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads")
-    htmlFile.write("};\n")
+        # Active threads
+        trace_count += 1
+        htmlFile.write(f"  var trace{trace_count} = {{\n")
+        writeTrace(
+            htmlFile, x_axis=cpu_x, y_axis=cpu_data[:, 4] * 100.0, x_name="x", y_name="y1", label="Active threads"
+        )
+        htmlFile.write("};\n")
 
-    # read chars
-    htmlFile.write("  var trace4 = {\n")
-    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y3", label="Read")
-    htmlFile.write("};\n")
+    if disk_data:
+        # read chars
+        trace_count += 1
+        htmlFile.write("  var trace{trace_count} = {{\n")
+        writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 1], x_name="x", y_name="y3", label="Read")
+        htmlFile.write("};\n")
 
-    # write chars
-    htmlFile.write("  var trace5 = {\n")
-    writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y3", label="Write")
-    htmlFile.write("};\n")
-
-    count = 6
-    dataString = "[" + ",".join(["trace{}".format(i) for i in range(1, 6)])  # traces that already exist
+        # write chars
+        trace_count += 1
+        htmlFile.write("  var trace{trace_count} = {{\n")
+        writeTrace(htmlFile, x_axis=disk_x, y_axis=disk_data[:, 2], x_name="x", y_name="y3", label="Write")
+        htmlFile.write("};\n")
+    if not cpu_data:
+        finish = max([x["finish"] for x in algm_records])
+        start = min([x["start"] for x in algm_records])
+        cpu_x = [(finish - start) / 1.0e9]
+        print(cpu_x)
+        print(header)
+    dataString = "[" + ",".join([f"trace{i}" for i in range(1, trace_count)])  # traces that already exist
     for tree in at.toTrees(algm_records):
         for node in tree.to_list():
-            htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, count, cpu_x[-1]))
-            dataString += ",trace%i" % count
-            count += 1
+            print(node.info)
+            if not sync_time:
+                sync_time = (min([x["start"] for x in algm_records]) + header) / 1e9
+            htmlFile.write(treeNodeToHtml(node, lmax, sync_time, header, trace_count, cpu_x[-1]))
+            dataString += ",trace%i" % trace_count if trace_count else "trace%i" % trace_count
+            trace_count += 1
     dataString += "]"
 
     htmlFile.write("var data = " + dataString + ";\n")
@@ -317,30 +335,40 @@ def main(argv=None):
 
     parser.add_argument("--version", action="version", version=f"mantidprofiler {__version__}")
 
+    parser.add_argument("--nodisk", action="store_true", help="Turn off disk read, required for compatability with osx")
+
+    parser.add_argument("--nocpu", action="store_true", help="Turn off cpu read, required for compatability with osx")
+
     # parse command line arguments
     argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)  # allow getting them supplied to `main()` in tests
 
     print(f"Attaching to process {args.pid}")
 
-    # start the disk monitor in a separate thread
-    diskthread = Thread(
-        target=diskmonitor,
-        args=(args.pid,),
-        kwargs={"logfile": args.diskfile, "interval": args.interval, "show_bytes": args.bytes},
-    )
-    diskthread.start()
+    if not args.nodisk:
+        # start the disk monitor in a separate thread
+        diskthread = Thread(
+            target=diskmonitor,
+            args=(args.pid,),
+            kwargs={"logfile": args.diskfile, "interval": args.interval, "show_bytes": args.bytes},
+        )
+        diskthread.start()
 
-    # cpu monitor in main thread to prevent early exit
-    cpumonitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+        # wait for disk monitor to finish
+        diskthread.join()
 
-    # wait for disk monitor to finish
-    diskthread.join()
+    if not args.nocpu:
+        # cpu monitor in main thread to prevent early exit
+        cpumonitor(int(args.pid), logfile=args.logfile, interval=args.interval)
+    else:
+        no_monitor(int(args.pid), interval=args.interval)
 
     # Read in algorithm timing log and build tree
     try:
         header, records = at.fromFile(Path(args.infile), cleanup=not args.noclean)
+        print(records)
         records = [x for x in records if x["finish"] - x["start"] > (args.mintime * 1.0e9)]
+        print(f"Records found: {len(records)}")
         # Number of threads allocated to this run
         nthreads = int(header.split()[3])
         # Run start time
@@ -362,20 +390,28 @@ def main(argv=None):
         records = []
 
     # Read in disk usage - sync_time will be overwritten by cpu below
-    args.diskfile = Path(args.diskfile)
-    sync_time, disk_data = parse_disk_log(args.diskfile, cleanup=not args.noclean)
-    # Time series
-    disk_x = disk_data[:, 0] - sync_time
+    if not args.nodisk:
+        args.diskfile = Path(args.diskfile)
+        sync_time, disk_data = parse_disk_log(args.diskfile, cleanup=not args.noclean)
+        # Time series
+        disk_x = disk_data[:, 0] - sync_time
+    else:
+        disk_x = disk_data = None
+        sync_time = 0
 
-    # Read in CPU and memory activity log
-    sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
-    # Time series
-    cpu_x = cpu_data[:, 0] - sync_time
-    print(sync_time)
+    if not args.nocpu:
+        # Read in CPU and memory activity log
+        sync_time, cpu_data = parse_cpu_log(args.logfile, cleanup=not args.noclean)
+        # Time series
+        cpu_x = cpu_data[:, 0] - sync_time
+        print(sync_time)
 
-    # Integrate under the curve and compute CPU usage fill factor
-    area_under_curve = np.trapz(cpu_data[:, 1], x=cpu_x)
-    fill_factor = area_under_curve / ((cpu_x[-1] - cpu_x[0]) * nthreads)
+        # Integrate under the curve and compute CPU usage fill factor
+        area_under_curve = np.trapz(cpu_data[:, 1], x=cpu_x)
+        fill_factor = area_under_curve / ((cpu_x[-1] - cpu_x[0]) * nthreads)
+    else:
+        cpu_data = cpu_x = None
+        fill_factor = sync_time = 0
 
     # Create HTML output with Plotly
     htmlProfile(
@@ -393,3 +429,7 @@ def main(argv=None):
         header=header,
         html_height=args.height,
     )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

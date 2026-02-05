@@ -144,6 +144,42 @@ def monitor(pid: int, logfile: Path, interval: Optional[float]) -> None:
         f.close()
 
 
+def no_monitor(pid: int, interval: Optional[float]) -> None:
+    # change None to reasonable default
+    if interval is None:
+        interval = 0.0
+
+    pr = psutil.Process(pid)
+
+    # Record start time
+    start_time = get_current_time()
+
+    try:
+        # Start main event loop
+        while True:
+            # Find current time
+            current_time = get_current_time()
+
+            try:
+                pr_status = pr.status()
+            except TypeError:  # psutil < 2.0
+                pr_status = pr.status
+            except psutil.NoSuchProcess:  # pragma: no cover
+                break
+
+            # Check if process status indicates we should exit
+            if pr_status in [psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD]:
+                print("Process finished ({0:.2f} seconds)".format(current_time - start_time))
+                break
+
+            if interval > 0.0:
+                sleep(interval)
+
+    except KeyboardInterrupt:  # pragma: no cover
+        print(f"killing process being monitored [PID={pr.pid}]:", " ".join(pr.cmdline()))
+        pr.kill()
+
+
 # Parse the logfile outputted by psrecord
 def parse_log(filename: Path, cleanup: bool = True):
     """
