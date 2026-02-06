@@ -30,7 +30,7 @@ jobs:
           # set up environment
           cd conda.recipe
           # build the package - need experimental feature of loading data from pyproject.toml
-          rattler-build build -c conda-forge -c mantid --experimental -r .
+          rattler-build build --experimental -r .
       - name: upload conda package to anaconda
         shell: pixi run bash -e {0}
         if: startsWith(github.ref, 'refs/tags/v')
