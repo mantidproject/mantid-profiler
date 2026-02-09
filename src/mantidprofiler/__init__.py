@@ -1,4 +1,6 @@
-from importlib import metadata
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = metadata.version("mantidprofiler")
-del metadata
+try:
+    __version__ = version("mantidprofiler")
+except PackageNotFoundError:
+    __version__ = "0+local"
